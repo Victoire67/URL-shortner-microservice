@@ -1,5 +1,5 @@
 import secrets
-
+from shortener.exceptions import ShortCodeGenerationError, ShortCodeNotFound
 import string
 
 ALPHABET = string.ascii_letters + string.digits
@@ -25,14 +25,14 @@ class UrlShortenerService:
             if self._repository.save_if_absent(short_code, long_url):
                 return short_code
 
-        raise  RuntimeError("Could not generate  a unique short code.")
+        raise  ShortCodeGenerationError("Could not generate  a unique short code.")
 
     def resolve(self , short_code) -> str : 
         """Returns the long url when given the short code"""
 
         long_url = self._repository.get(short_code)
         if long_url is None : 
-            raise LookupError(f"Short code '{short_code}' was not found.")
+            raise ShortCodeNotFound(f"Short code '{short_code}' was not found.")
         return long_url
 
 
