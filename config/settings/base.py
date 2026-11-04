@@ -127,6 +127,19 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 
+# Django REST Framework + OpenAPI docs
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'URL Shortener API',
+    'DESCRIPTION': 'Shorten long urls and resolve short codes.',
+    'VERSION': '1.0.0',
+}
+
+
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
