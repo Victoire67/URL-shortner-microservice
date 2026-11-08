@@ -6,3 +6,8 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("", include("shortener.urls")),
 ]
+
+# JSON error responses for errors raised outside the API views
+handler400 = "core.exceptions.bad_request_handler"
+handler404 = "core.exceptions.not_found_handler"
+handler500 = "core.exceptions.server_error_handler"
