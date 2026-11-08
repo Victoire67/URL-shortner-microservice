@@ -22,7 +22,7 @@ class ShortenView(APIView):
     def post(
         self,
         request,
-        service: UrlShortenerService = Provide[Container.url_shortner_service],
+        service: UrlShortenerService = Provide[Container.url_shortener_service],
     ):
         serializer = ShortenRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -51,7 +51,7 @@ class ResolveView(APIView):
         self,
         request,
         short_code: str,
-        service: UrlShortenerService = Provide[Container.url_shortner_service],
+        service: UrlShortenerService = Provide[Container.url_shortener_service],
     ):
         try:
             long_url = service.resolve(short_code)

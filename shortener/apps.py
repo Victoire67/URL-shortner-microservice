@@ -3,10 +3,10 @@ from django.conf import settings
 
 
 class ShortenerConfig(AppConfig):
-    name = 'shortener'
+    name = "shortener"
 
     def ready(self):
-        """Builds the container once at startup and wires it into the views"""
+        """Builds the DI container once at startup and wires it into the views."""
         from shortener.containers import Container
 
         self.container = Container()
