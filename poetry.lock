@@ -42,18 +42,6 @@ files = [
 ]
 
 [[package]]
-name = "dependency-injection"
-version = "1.2.0"
-description = "This library defines a helper for building a dependency injection framework."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "dependency_injection-1.2.0-py3-none-any.whl", hash = "sha256:10f8b2ef483a5a91e97144b0db9042270f218325e0a3d6cb78e3ad9cda7bcc79"},
-    {file = "dependency_injection-1.2.0.tar.gz", hash = "sha256:ff80737dd4aa50b25c41f32882c7391d2c435a3ccec119413e9b8d9e2a03e27f"},
-]
-
-[[package]]
 name = "dependency-injector"
 version = "4.49.1"
 description = "Dependency injection framework for Python"
@@ -155,6 +143,32 @@ uritemplate = ">=2.0.0"
 [package.extras]
 offline = ["drf-spectacular-sidecar"]
 sidecar = ["drf-spectacular-sidecar"]
+
+[[package]]
+name = "fakeredis"
+version = "2.40.0"
+description = "Python implementation of redis API, can be used for testing purposes."
+optional = false
+python-versions = ">=3.8"
+groups = ["dev"]
+files = [
+    {file = "fakeredis-2.40.0-py3-none-any.whl", hash = "sha256:b155ef2442134372eb1cc5664cf5638ccbe0a6dde9d1942153708e2782f315c9"},
+    {file = "fakeredis-2.40.0.tar.gz", hash = "sha256:16eb05a3e97c37a033c73d1da7e885eb2aa47ba7604cc377144339efa2780a02"},
+]
+
+[package.dependencies]
+redis = ">=4.3"
+sortedcontainers = ">=2"
+
+[package.extras]
+bf = ["pyprobables (>=0.6)"]
+cf = ["pyprobables (>=0.6)"]
+digest = ["xxhash (>=3)"]
+json = ["jsonpath-ng (>=1.6)"]
+lua = ["lupa (>=2.1)"]
+probabilistic = ["pyprobables (>=0.6)"]
+valkey = ["valkey (>=6)"]
+vectorset = ["jsonpath-ng (>=1.6) ; python_version >= \"3.11\"", "numpy (>=2.4.0) ; python_version >= \"3.11\""]
 
 [[package]]
 name = "gunicorn"
@@ -418,7 +432,7 @@ version = "8.1.0"
 description = "Python client for Redis database and key-value store"
 optional = false
 python-versions = ">=3.10"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "redis-8.1.0-py3-none-any.whl", hash = "sha256:a4fe1aac3d3b3cc791d4b3d5931c5a956045dc951ee74d1c913ee3ac4d2ee9fb"},
     {file = "redis-8.1.0.tar.gz", hash = "sha256:6e1a19beef9225c83efd689c7e6b7da2d5215b1f42cd13b7fc3714d0a09c7b25"},
@@ -587,6 +601,18 @@ files = [
 ]
 
 [[package]]
+name = "sortedcontainers"
+version = "2.4.0"
+description = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
+optional = false
+python-versions = "*"
+groups = ["dev"]
+files = [
+    {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
+    {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
+]
+
+[[package]]
 name = "sqlparse"
 version = "0.6.1"
 description = "A non-validating SQL parser."
@@ -630,4 +656,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"
-content-hash = "5777e946fe5ad6183c445f262749c411b851f973ba21414e98e3b84f339c5ea1"
+content-hash = "a8d847f76fc28f3f9407d5cfdc15b34ca8415f999b6fb2804c11123de461e468"
