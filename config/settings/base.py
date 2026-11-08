@@ -94,3 +94,25 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
 }
 
+
+# Logging
+
+LOG_LEVEL = env("LOG_LEVEL", default="INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {"format": "%(asctime)s %(levelname)s [%(name)s] %(message)s"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "standard"},
+    },
+    "root": {"handlers": ["console"], "level": LOG_LEVEL},
+    "loggers": {
+        # The request logging middleware already logs every request,
+        # so Django's own per-request logs only report server errors
+        "django.server": {"level": "ERROR"},
+        "django.request": {"level": "ERROR"},
+    },
+}
