@@ -1,5 +1,6 @@
 from dependency_injector.wiring import Provide, inject
 from django.shortcuts import redirect
+from django.urls import reverse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -31,7 +32,7 @@ class ShortenView(APIView):
         serializer.is_valid(raise_exception=True)
 
         short_code = service.shorten(serializer.validated_data["url"])
-        short_url = request.build_absolute_uri(f"/{short_code}")
+        short_url = request.build_absolute_uri(reverse("shortener:resolve", args=[short_code]))
         return Response(
             {"short_code": short_code, "short_url": short_url},
             status=status.HTTP_201_CREATED,
