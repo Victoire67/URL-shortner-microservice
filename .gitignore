@@ -4,3 +4,4 @@ __pycache__/
 .env
 try_know.py
 db.sqlite3
+.pytest_cache/

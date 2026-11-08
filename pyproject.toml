@@ -31,3 +31,7 @@ dev = [
     "pytest-django (>=4.14.0,<5.0.0)",
     "fakeredis (>=2.40.0,<3.0.0)"
 ]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
+python_files = ["test_*.py"]
