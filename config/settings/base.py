@@ -91,8 +91,13 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "URL Shortener API",
-    "DESCRIPTION": "Shorten long urls and resolve short codes back to them.",
+    "DESCRIPTION": (
+        "Shorten long urls and resolve short codes back to them.\n\n"
+        "Every error is returned as JSON with the shape "
+        '`{"error": {"status", "code", "message", "details"}}`.'
+    ),
     "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 

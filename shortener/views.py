@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.serializers import ErrorResponseSerializer
 from shortener.containers import Container
 from shortener.serializers import ShortenRequestSerializer, ShortenResponseSerializer
 from shortener.services import UrlShortenerService
@@ -18,8 +19,8 @@ class ShortenView(APIView):
         request=ShortenRequestSerializer,
         responses={
             201: ShortenResponseSerializer,
-            400: OpenApiResponse(description="Invalid url"),
-            503: OpenApiResponse(description="Storage unavailable or no free code"),
+            400: OpenApiResponse(ErrorResponseSerializer, description="The url is missing or invalid."),
+            503: OpenApiResponse(ErrorResponseSerializer, description="Storage unavailable or no free code."),
         },
     )
     @inject
@@ -31,12 +32,15 @@ class ShortenView(APIView):
         serializer = ShortenRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        short_code = service.shorten(serializer.validated_data["url"])
+        long_url = serializer.validated_data["url"]
+
+        short_code = service.shorten(long_url)
         short_url = request.build_absolute_uri(reverse("shortener:resolve", args=[short_code]))
-        return Response(
-            {"short_code": short_code, "short_url": short_url},
-            status=status.HTTP_201_CREATED,
+
+        response = ShortenResponseSerializer(
+            {"short_code": short_code, "short_url": short_url, "long_url": long_url}
         )
+        return Response(response.data, status=status.HTTP_201_CREATED)
 
 
 class ResolveView(APIView):
@@ -45,7 +49,7 @@ class ResolveView(APIView):
     @extend_schema(
         responses={
             302: OpenApiResponse(description="Redirect to the long url"),
-            404: OpenApiResponse(description="Short code not found"),
+            404: OpenApiResponse(ErrorResponseSerializer, description="The short code does not exist."),
         },
     )
     @inject
