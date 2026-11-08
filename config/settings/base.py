@@ -33,6 +33,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "core.middleware.RequestLoggingMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -110,6 +111,8 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
     "loggers": {
+        # Replace Django's default handlers so each record is printed once
+        "django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
         # The request logging middleware already logs every request,
         # so Django's own per-request logs only report server errors
         "django.server": {"level": "ERROR"},
