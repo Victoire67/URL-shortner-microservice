@@ -14,6 +14,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
       REDIS_URL: redis://redis:6379/0
+      POSTGRES_HOST: db
     ports:
       - "8000:8000"
     volumes:
@@ -26,6 +27,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       REDIS_URL: redis://redis:6379/0
+      POSTGRES_HOST: db
     ports:
       - "8001:8000"
 

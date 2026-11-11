@@ -56,8 +56,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# All data lives in Redis, so no relational database is configured
-DATABASES = {}
+# Postgres is the permanent database for short urls
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("POSTGRES_DB", default="shortener"),
+        "USER": env("POSTGRES_USER", default="shortener"),
+        "PASSWORD": env("POSTGRES_PASSWORD"),
+        "HOST": env("POSTGRES_HOST", default="localhost"),
+        "PORT": env("POSTGRES_PORT", default=5432, cast=int)
+    }
+}
 
 
 # Internationalization
