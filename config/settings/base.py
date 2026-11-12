@@ -23,6 +23,8 @@ REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 # Application definition
 
 INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
     # Third-party
