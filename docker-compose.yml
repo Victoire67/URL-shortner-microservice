@@ -5,6 +5,8 @@ x-app: &app
   depends_on:
     redis:
       condition: service_healthy
+    db:
+      condition: service_healthy
 
 services:
   # Development: Django dev server with debug on and hot reloading
