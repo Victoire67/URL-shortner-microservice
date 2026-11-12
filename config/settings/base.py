@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Local
     "shortener",
+    "users"
 ]
 
 MIDDLEWARE = [
@@ -142,3 +143,5 @@ LOGGING = {
         "django.request": {"level": "ERROR"},
     },
 }
+
+AUTH_USER_MODEL = "users.User" # Attaching custom user model in settings
