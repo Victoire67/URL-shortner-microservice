@@ -1,4 +1,4 @@
-from .models import Url, Click
+from .models import Url, Click, Tag
 from django.contrib import admin
 
 
@@ -12,3 +12,8 @@ class UrlAdmin(admin.ModelAdmin):
 class ClickAdmin(admin.ModelAdmin):
     list_display = ("url", "clicked_at", "ip_address", "country", "city")
     list_filter = ("country", "clicked_at")
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("name",)
