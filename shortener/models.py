@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Q
+from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 
@@ -61,7 +62,39 @@ class Url(models.Model):
         return f"{self.short_code} -> {self.original_url}"
 
 
+class ClickQuerySet(models.QuerySet):
+    """Click analytics. Each method runs as one GROUP BY query in Postgres."""
+
+    def per_country(self):
+        """[{"country": "Ghana", "total": 12}, ...], most clicks first."""
+        return (
+            self.values("country")
+            .annotate(total=Count("id"))
+            .order_by("-total", "country")
+        )
+
+    def per_day(self):
+        """[{"day": date(2026, 11, 13), "total": 5}, ...], oldest day first (UTC)."""
+        return (
+            self.annotate(day=TruncDate("clicked_at"))
+            .values("day")
+            .annotate(total=Count("id"))
+            .order_by("day")
+        )
+
+    def top_referrers(self, limit=10):
+        """[{"referrer": "https://t.co/", "total": 7}, ...], most clicks first."""
+        return (
+            self.exclude(referrer__isnull=True)
+            .values("referrer")
+            .annotate(total=Count("id"))
+            .order_by("-total", "referrer")[:limit]
+        )
+
+
 class Click(models.Model):
+
+    objects = ClickQuerySet.as_manager()
 
     class Meta:
         indexes = [
