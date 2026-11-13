@@ -88,6 +88,10 @@ docker compose up -d
 docker compose exec web python -m pytest
 ```
 
+Test data is built with the factory_boy factories in `shortener/tests/factories.py` (`UserFactory`, `UrlFactory`,
+`TagFactory`, `ClickFactory`). GitHub Actions runs the same Docker setup on every push and pull request
+(`.github/workflows/tests.yml`).
+
 ## Inspecting queries
 
 In development, open an API url in the browser (for example http://localhost:8000/api/v1/urls/). The browsable API
