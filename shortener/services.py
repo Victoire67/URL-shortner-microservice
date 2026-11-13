@@ -1,6 +1,8 @@
 import logging
 import secrets
 import string
+from collections.abc import Sequence
+from datetime import datetime
 
 from shortener.exceptions import ShortCodeGenerationError, ShortCodeNotFound
 from shortener.repositories import UrlRepository
@@ -22,11 +24,27 @@ class UrlShortenerService:
     def _generate_code(self) -> str:
         return "".join(secrets.choice(ALPHABET) for _ in range(self._code_length))
 
-    def shorten(self, long_url: str) -> str:
+    def shorten(
+        self,
+        long_url: str,
+        *,
+        owner=None,
+        custom_alias: str | None = None,
+        expires_at: datetime | None = None,
+        tags: Sequence[str] = (),
+    ) -> str:
         """Stores the url under a new unique short code and returns the code."""
         for _ in range(self.MAX_ATTEMPTS):
             short_code = self._generate_code()
-            if self._repository.save_if_absent(short_code, long_url):
+            saved = self._repository.save_if_absent(
+                short_code,
+                long_url,
+                owner=owner,
+                custom_alias=custom_alias,
+                expires_at=expires_at,
+                tags=tags,
+            )
+            if saved:
                 logger.info("Created short code %s", short_code)
                 return short_code
             logger.warning("Short code collision on %s, retrying", short_code)

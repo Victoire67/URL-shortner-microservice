@@ -7,11 +7,13 @@ from shortener.services import ALPHABET, UrlShortenerService
 class InMemoryRepository:
     def __init__(self):
         self.data = {}
+        self.options = {}
 
-    def save_if_absent(self, short_code, long_url):
+    def save_if_absent(self, short_code, long_url, **options):
         if short_code in self.data:
             return False
         self.data[short_code] = long_url
+        self.options[short_code] = options
         return True
 
     def get(self, short_code):
@@ -19,7 +21,7 @@ class InMemoryRepository:
 
 
 class AlwaysTakenRepository(InMemoryRepository):
-    def save_if_absent(self, short_code, long_url):
+    def save_if_absent(self, short_code, long_url, **options):
         return False
 
 
@@ -39,6 +41,23 @@ def test_shorten_stores_url_under_a_new_code(service, repository):
     assert len(code) == 7
     assert set(code) <= set(ALPHABET)
     assert repository.data[code] == "https://example.com"
+
+
+def test_shorten_passes_url_options_to_the_repository(service, repository):
+    code = service.shorten(
+        "https://example.com",
+        owner="ana",
+        custom_alias="docs",
+        expires_at=None,
+        tags=["Work"],
+    )
+
+    assert repository.options[code] == {
+        "owner": "ana",
+        "custom_alias": "docs",
+        "expires_at": None,
+        "tags": ["Work"],
+    }
 
 
 def test_shorten_gives_different_codes_for_each_call(service):
