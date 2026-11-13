@@ -8,25 +8,29 @@ interactive Swagger documentation.
 ## Architecture
 
 ```
-config/                  Project configuration
-  settings/base.py       Shared settings (DRF, OpenAPI, logging)
-  settings/dev.py        Development profile: DEBUG on
+config/                  Project package: settings and project-wide code
+  settings/base.py       Shared settings (DRF, OpenAPI, Postgres, logging)
+  settings/dev.py        Development profile: DEBUG on, debug toolbar
   settings/prod.py       Production profile: DEBUG off, secret key required
-  urls.py                Root routes and JSON error handlers
-core/                    Cross-cutting concerns
+  urls.py                Root routes (/api/v1/, docs, admin) and JSON error handlers
   exceptions.py          Global exception handler -> structured JSON errors
   middleware.py          Request logging middleware
   serializers.py         Error response schema for the docs
+  wsgi.py / asgi.py      Server entry points
 shortener/               The shortener app
-  views.py               API endpoints (HTTP only, no business logic)
-  serializers.py         Request validation and response shapes
-  services.py            UrlShortenerService: code generation and lookup
-  repositories.py        RedisUrlRepository: storage access
-  containers.py          DI container that wires Redis -> repository -> service
-  exceptions.py          Domain errors (not found, generation failed)
-  tests/                 Unit and API tests
-Dockerfile               Multi-stage production image (Gunicorn)
-docker-compose.yml       App (dev and prod profiles) + Redis
+  models.py              Url, Tag, Click and their QuerySets (filters, analytics)
+  views.py               URL viewset and redirect (HTTP only, no business logic)
+  serializers.py         URLSerializer: validation and response shape
+  services.py            UrlShortenerService: code generation, lookup, click logging
+  repositories.py        DjangoUrlRepository: storage access through the ORM
+  containers.py          DI container that wires repository -> service
+  exceptions.py          Domain errors (not found, alias taken, generation failed)
+  migrations/            Schema and data migrations (default tags)
+  tests/                 Unit and API tests, factories.py for test data
+users/                   Custom User model (email, tier) and its admin
+Dockerfile               Multi-stage image; dev deps only with INSTALL_DEV=true
+docker-compose.yml       App (dev and prod profiles) + Postgres + Redis
+requirements-dev.txt     Debug toolbar and test tools (dev image only)
 gunicorn.conf.py         Gunicorn worker settings
 ```
 
