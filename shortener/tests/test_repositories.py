@@ -4,6 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+from shortener.exceptions import CustomAliasTaken
 from shortener.models import Url
 from shortener.repositories import DjangoUrlRepository, RedisUrlRepository
 
@@ -27,11 +28,17 @@ class TestDjangoUrlRepository:
         assert repository.save_if_absent("abc1234", "https://other.com") is False
         assert repository.get("abc1234") == "https://example.com"
 
-    def test_save_rejects_taken_custom_alias(self, repository):
+    def test_save_raises_when_custom_alias_is_taken(self, repository):
         repository.save_if_absent("abc1234", "https://example.com", custom_alias="docs")
 
-        assert repository.save_if_absent("xyz9876", "https://other.com", custom_alias="docs") is False
+        with pytest.raises(CustomAliasTaken):
+            repository.save_if_absent("xyz9876", "https://other.com", custom_alias="docs")
         assert not Url.objects.filter(short_code="xyz9876").exists()
+
+    def test_taken_code_with_free_alias_returns_false(self, repository):
+        repository.save_if_absent("abc1234", "https://example.com")
+
+        assert repository.save_if_absent("abc1234", "https://other.com", custom_alias="docs") is False
 
     def test_save_stores_owner_expiry_and_tags(self, repository):
         owner = get_user_model().objects.create_user(username="ana", email="ana@example.com")

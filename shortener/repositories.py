@@ -5,6 +5,7 @@ from typing import Protocol
 import redis
 from django.db import IntegrityError, transaction
 
+from shortener.exceptions import CustomAliasTaken
 from shortener.models import Tag, Url
 
 
@@ -20,7 +21,12 @@ class UrlRepository(Protocol):
         custom_alias: str | None = None,
         expires_at: datetime | None = None,
         tags: Sequence[str] = (),
-    ) -> bool: ...
+    ) -> bool:
+        """Saves the url; returns False if the short code is taken.
+
+        Raises CustomAliasTaken if the custom alias is already used.
+        """
+        ...
 
     def get(self, short_code: str) -> str | None: ...
 
@@ -38,7 +44,7 @@ class DjangoUrlRepository:
         expires_at: datetime | None = None,
         tags: Sequence[str] = (),
     ) -> bool:
-        """Creates the row; returns False when the unique constraint rejects the code."""
+        """Creates the row; the unique constraints decide whether the code or alias is free."""
         try:
             with transaction.atomic():
                 url = Url.objects.create(
@@ -51,6 +57,8 @@ class DjangoUrlRepository:
                 if tags:
                     url.tags.set(Tag.objects.get_or_create(name=name)[0] for name in tags)
         except IntegrityError:
+            if custom_alias and Url.objects.filter(custom_alias=custom_alias).exists():
+                raise CustomAliasTaken(f"Custom alias '{custom_alias}' is already taken.")
             return False
         return True
 

@@ -1,6 +1,6 @@
 import pytest
 
-from shortener.exceptions import ShortCodeGenerationError, ShortCodeNotFound
+from shortener.exceptions import CustomAliasTaken, ShortCodeGenerationError, ShortCodeNotFound
 from shortener.services import ALPHABET, UrlShortenerService
 
 
@@ -23,6 +23,16 @@ class InMemoryRepository:
 class AlwaysTakenRepository(InMemoryRepository):
     def save_if_absent(self, short_code, long_url, **options):
         return False
+
+
+class AliasTakenRepository(InMemoryRepository):
+    def __init__(self):
+        super().__init__()
+        self.attempts = 0
+
+    def save_if_absent(self, short_code, long_url, **options):
+        self.attempts += 1
+        raise CustomAliasTaken()
 
 
 @pytest.fixture
@@ -80,3 +90,12 @@ def test_shorten_gives_up_after_max_attempts():
 
     with pytest.raises(ShortCodeGenerationError):
         service.shorten("https://example.com")
+
+
+def test_shorten_stops_at_once_when_custom_alias_is_taken():
+    repository = AliasTakenRepository()
+    service = UrlShortenerService(repository)
+
+    with pytest.raises(CustomAliasTaken):
+        service.shorten("https://example.com", custom_alias="docs")
+    assert repository.attempts == 1
