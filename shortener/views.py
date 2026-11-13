@@ -48,6 +48,7 @@ URL_RESPONSE_EXAMPLE = OpenApiExample(
     value={
         "short_code": "aZ3kP9q",
         "short_url": "http://localhost:8000/api/v1/aZ3kP9q",
+        "owner": None,
         "original_url": "https://docs.djangoproject.com/en/stable/topics/http/urls/",
         "custom_alias": "django-urls",
         "title": "Django URL dispatcher",
@@ -127,7 +128,13 @@ NOT_FOUND_RESPONSE = OpenApiResponse(
 class URLViewSet(viewsets.ModelViewSet):
     """Create, list, read, update and deactivate short urls."""
 
-    queryset = Url.objects.filter(is_active=True).prefetch_related("tags")
+    # owner is joined in the same query and tags are fetched in one extra query,
+    # so listing 1 or 1000 urls always costs 2 queries
+    queryset = (
+        Url.objects.filter(is_active=True)
+        .select_related("owner")
+        .prefetch_related("tags")
+    )
     serializer_class = URLSerializer
     lookup_field = "short_code"
     http_method_names = ["get", "post", "put", "delete", "head", "options"]

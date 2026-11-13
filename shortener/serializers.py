@@ -12,6 +12,11 @@ class URLSerializer(serializers.ModelSerializer):
     short_url = serializers.SerializerMethodField(
         help_text="Full url that redirects to original_url."
     )
+    owner = serializers.SlugRelatedField(
+        slug_field="username",
+        read_only=True,
+        help_text="Username of the owner, or null for anonymous urls.",
+    )
     tags = serializers.SlugRelatedField(
         many=True,
         slug_field="name",
@@ -25,6 +30,7 @@ class URLSerializer(serializers.ModelSerializer):
         fields = [
             "short_code",
             "short_url",
+            "owner",
             "original_url",
             "custom_alias",
             "title",
