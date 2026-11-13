@@ -18,6 +18,6 @@ if getattr(settings, "DEBUG_TOOLBAR", False):
     urlpatterns += debug_toolbar_urls()
 
 # JSON error responses for errors raised outside the API views
-handler400 = "core.exceptions.bad_request_handler"
-handler404 = "core.exceptions.not_found_handler"
-handler500 = "core.exceptions.server_error_handler"
+handler400 = "config.exceptions.bad_request_handler"
+handler404 = "config.exceptions.not_found_handler"
+handler500 = "config.exceptions.server_error_handler"

@@ -23,7 +23,7 @@ def test_root_redirects_to_swagger(client):
 
 
 def test_requests_are_logged(api_client, caplog):
-    with caplog.at_level(logging.INFO, logger="core.middleware"):
+    with caplog.at_level(logging.INFO, logger="config.middleware"):
         api_client.get("/api/v1/missing")
 
     assert any("GET /api/v1/missing 404" in message for message in caplog.messages)

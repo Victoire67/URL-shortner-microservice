@@ -11,8 +11,8 @@ from drf_spectacular.utils import (
 from rest_framework import viewsets
 from rest_framework.views import APIView
 
-from core.exceptions import error_body
-from core.serializers import ErrorResponseSerializer
+from config.exceptions import error_body
+from config.serializers import ErrorResponseSerializer
 from shortener.containers import Container
 from shortener.domain import Visit
 from shortener.models import Click, Url
