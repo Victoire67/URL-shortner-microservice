@@ -1,11 +1,14 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.utils import timezone
 
+from shortener.domain import Visit
 from shortener.exceptions import CustomAliasTaken
-from shortener.models import Url
+from shortener.models import Click, Url
 from shortener.repositories import DjangoUrlRepository, RedisUrlRepository
 
 
@@ -71,6 +74,46 @@ class TestDjangoUrlRepository:
 
         assert repository.get("expired") is None
         assert repository.get("inactive") is None
+
+
+    def test_record_click_saves_click_and_increments_count(self, repository):
+        repository.save_if_absent("abc1234", "https://example.com")
+        visit = Visit(ip_address="203.0.113.5", user_agent="Mozilla/5.0", referrer="https://t.co/x")
+
+        repository.record_click("abc1234", visit)
+
+        url = Url.objects.get(short_code="abc1234")
+        assert url.click_count == 1
+        click = url.clicks.get()
+        assert click.ip_address == "203.0.113.5"
+        assert click.user_agent == "Mozilla/5.0"
+        assert click.referrer == "https://t.co/x"
+
+    def test_record_click_on_unknown_code_does_nothing(self, repository):
+        repository.record_click("missing", Visit(ip_address="203.0.113.5"))
+
+        assert Click.objects.count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_click_count_is_correct_under_concurrent_visits():
+    """20 visits at the same time must give click_count == 20 (no lost updates)."""
+    repository = DjangoUrlRepository()
+    repository.save_if_absent("abc1234", "https://example.com")
+    visits = 20
+
+    def visit(_):
+        try:
+            repository.record_click("abc1234", Visit(ip_address="203.0.113.5"))
+        finally:
+            connection.close()  # each thread opens its own database connection
+
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        list(pool.map(visit, range(visits)))
+
+    url = Url.objects.get(short_code="abc1234")
+    assert url.click_count == visits
+    assert url.clicks.count() == visits
 
 
 class TestRedisUrlRepository:

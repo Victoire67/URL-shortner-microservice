@@ -1,6 +1,7 @@
 import pytest
 
 from shortener.exceptions import CustomAliasTaken, ShortCodeGenerationError, ShortCodeNotFound
+from shortener.domain import Visit
 from shortener.services import ALPHABET, UrlShortenerService
 
 
@@ -8,6 +9,7 @@ class InMemoryRepository:
     def __init__(self):
         self.data = {}
         self.options = {}
+        self.clicks = []
 
     def save_if_absent(self, short_code, long_url, **options):
         if short_code in self.data:
@@ -18,6 +20,9 @@ class InMemoryRepository:
 
     def get(self, short_code):
         return self.data.get(short_code)
+
+    def record_click(self, short_code, visit):
+        self.clicks.append((short_code, visit))
 
 
 class AlwaysTakenRepository(InMemoryRepository):
@@ -103,3 +108,27 @@ def test_shorten_stops_at_once_when_custom_alias_is_taken():
     with pytest.raises(CustomAliasTaken):
         service.shorten("https://example.com", custom_alias="docs")
     assert repository.attempts == 1
+
+
+def test_resolve_records_the_visit(service, repository):
+    code = service.shorten("https://example.com")
+    visit = Visit(ip_address="203.0.113.5", user_agent="Mozilla/5.0", referrer="https://t.co/x")
+
+    service.resolve(code, visit)
+
+    assert repository.clicks == [(code, visit)]
+
+
+def test_resolve_without_visit_records_nothing(service, repository):
+    code = service.shorten("https://example.com")
+
+    service.resolve(code)
+
+    assert repository.clicks == []
+
+
+def test_resolve_unknown_code_records_nothing(service, repository):
+    with pytest.raises(ShortCodeNotFound):
+        service.resolve("missing", Visit(ip_address="203.0.113.5"))
+
+    assert repository.clicks == []

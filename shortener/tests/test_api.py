@@ -1,8 +1,11 @@
+from datetime import timedelta
+
 import pytest
 from django.db import OperationalError
 from django.urls import reverse
+from django.utils import timezone
 
-from shortener.models import Url
+from shortener.models import Click, Url
 
 LIST_URL = reverse("shortener:url-list")
 
@@ -204,6 +207,32 @@ def test_resolve_redirects_to_long_url(api_client):
     assert response["Location"] == "https://example.com/some/long/path"
 
 
+def test_resolve_saves_a_click_and_counts_it(api_client):
+    code = create(api_client).json()["short_code"]
+    resolve_url = reverse("shortener:resolve", args=[code])
+
+    api_client.get(resolve_url, HTTP_USER_AGENT="Mozilla/5.0", HTTP_REFERER="https://t.co/x")
+    api_client.get(resolve_url)
+
+    url = Url.objects.get(short_code=code)
+    assert url.click_count == 2
+    first = url.clicks.order_by("clicked_at").first()
+    assert first.ip_address == "127.0.0.1"
+    assert first.user_agent == "Mozilla/5.0"
+    assert first.referrer == "https://t.co/x"
+    assert url.clicks.order_by("clicked_at").last().referrer is None
+
+
+def test_resolve_expired_code_returns_404_without_a_click(api_client):
+    code = create(api_client).json()["short_code"]
+    Url.objects.filter(short_code=code).update(expires_at=timezone.now() - timedelta(minutes=1))
+
+    response = api_client.get(reverse("shortener:resolve", args=[code]))
+
+    assert response.status_code == 404
+    assert Click.objects.count() == 0
+
+
 def test_resolve_unknown_code_returns_404(api_client):
     response = api_client.get(reverse("shortener:resolve", args=["missing"]))
 
@@ -221,6 +250,9 @@ class UnavailableRepository:
         raise OperationalError("database is down")
 
     def get(self, short_code):
+        raise OperationalError("database is down")
+
+    def record_click(self, short_code, visit):
         raise OperationalError("database is down")
 
 
