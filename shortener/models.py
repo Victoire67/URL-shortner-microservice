@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 
 
 class Tag(models.Model):
@@ -9,7 +11,23 @@ class Tag(models.Model):
         return self.name
 
 
+class URLQuerySet(models.QuerySet):
+
+    def active_urls(self):
+        return self.filter(is_active=True).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+        )
+
+    def expired_urls(self):
+        return self.filter(expires_at__lt=timezone.now())
+
+    def popular_urls(self):
+        return self.order_by("-click_count")
+
+
 class Url(models.Model):
+
+    objects = URLQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
