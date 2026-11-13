@@ -2,6 +2,13 @@ from django.conf import settings
 from django.db import models
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Url(models.Model):
 
     class Meta:
@@ -22,6 +29,7 @@ class Url(models.Model):
         null=True,
         blank=True,
     )
+    tags = models.ManyToManyField(Tag, related_name="urls", blank=True)
     is_active = models.BooleanField(default=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     title = models.CharField(max_length=255, blank=True)
