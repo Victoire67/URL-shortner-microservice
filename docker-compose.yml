@@ -12,7 +12,7 @@ services:
   # Development: Django dev server with debug on and hot reloading
   web:
     <<: *app
-    command: python manage.py runserver 0.0.0.0:8000
+    command: sh -c "python manage.py migrate --noinput && exec python manage.py runserver 0.0.0.0:8000"
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
       REDIS_URL: redis://redis:6379/0
@@ -26,6 +26,7 @@ services:
   web-prod:
     <<: *app
     profiles: ["prod"]
+    command: sh -c "python manage.py migrate --noinput && exec gunicorn config.wsgi:application --config gunicorn.conf.py"
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       REDIS_URL: redis://redis:6379/0
