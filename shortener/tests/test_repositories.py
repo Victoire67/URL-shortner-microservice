@@ -2,7 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.db import connection
 from django.utils import timezone
 
@@ -10,6 +9,7 @@ from shortener.domain import Visit
 from shortener.exceptions import CustomAliasTaken
 from shortener.models import Click, Url
 from shortener.repositories import DjangoUrlRepository, RedisUrlRepository
+from shortener.tests.factories import UserFactory
 
 
 @pytest.mark.django_db
@@ -44,7 +44,7 @@ class TestDjangoUrlRepository:
         assert repository.save_if_absent("abc1234", "https://other.com", custom_alias="docs") is False
 
     def test_save_stores_owner_expiry_and_tags(self, repository):
-        owner = get_user_model().objects.create_user(username="ana", email="ana@example.com")
+        owner = UserFactory()
         expires_at = timezone.now() + timedelta(days=1)
 
         repository.save_if_absent(

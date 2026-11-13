@@ -4,19 +4,17 @@ import pytest
 from django.utils import timezone
 
 from shortener.models import Url
+from shortener.tests.factories import UrlFactory
 
 
 @pytest.fixture
 def urls():
     now = timezone.now()
     return {
-        "no_expiry": Url.objects.create(original_url="https://a.com", short_code="a", click_count=5),
-        "future": Url.objects.create(original_url="https://b.com", short_code="b", click_count=20,
-                                     expires_at=now + timedelta(days=1)),
-        "expired": Url.objects.create(original_url="https://c.com", short_code="c", click_count=50,
-                                      expires_at=now - timedelta(days=1)),
-        "inactive": Url.objects.create(original_url="https://d.com", short_code="d", click_count=10,
-                                       is_active=False),
+        "no_expiry": UrlFactory(click_count=5),
+        "future": UrlFactory(click_count=20, expires_at=now + timedelta(days=1)),
+        "expired": UrlFactory(click_count=50, expires_at=now - timedelta(days=1)),
+        "inactive": UrlFactory(click_count=10, is_active=False),
     }
 
 

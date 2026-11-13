@@ -1,8 +1,7 @@
 import pytest
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from shortener.models import Tag, Url
+from shortener.tests.factories import UrlFactory, UserFactory
 
 LIST_URL = reverse("shortener:url-list")
 
@@ -11,11 +10,7 @@ LIST_QUERIES = 2
 
 
 def make_urls(count):
-    owner = get_user_model().objects.create_user(username="ana", email="ana@example.com")
-    tags = list(Tag.objects.filter(name__in=["Work", "Social"]))
-    for i in range(count):
-        url = Url.objects.create(original_url=f"https://example.com/{i}", short_code=f"c{i}", owner=owner)
-        url.tags.set(tags)
+    UrlFactory.create_batch(count, owner=UserFactory(username="ana"), tags=["Work", "Social"])
 
 
 @pytest.mark.parametrize("count", [1, 20])

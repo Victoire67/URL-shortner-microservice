@@ -2,7 +2,8 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from shortener.models import Click, Url
+from shortener.models import Click
+from shortener.tests.factories import ClickFactory, UrlFactory
 
 
 def at(day, hour=12):
@@ -10,23 +11,19 @@ def at(day, hour=12):
 
 
 def seed_clicks(url, rows):
-    """rows: (country, referrer, clicked_at). clicked_at is set after create
-    because auto_now_add ignores any value passed to create()."""
+    """rows: (country, referrer, clicked_at)."""
     for country, referrer, clicked_at in rows:
-        click = Click.objects.create(
-            url=url, ip_address="203.0.113.5", user_agent="test", country=country, referrer=referrer
-        )
-        Click.objects.filter(pk=click.pk).update(clicked_at=clicked_at)
+        ClickFactory(url=url, country=country, referrer=referrer, clicked_at=clicked_at)
 
 
 @pytest.fixture
 def url():
-    return Url.objects.create(original_url="https://example.com", short_code="abc1234")
+    return UrlFactory()
 
 
 @pytest.fixture
 def seeded(url):
-    other = Url.objects.create(original_url="https://other.com", short_code="other12")
+    other = UrlFactory()
     seed_clicks(
         url,
         [
