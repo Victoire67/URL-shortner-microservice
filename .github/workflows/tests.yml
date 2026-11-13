@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Tests against Postgres (Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env from the example
+        run: cp .env.example .env
+
+      - name: Build the dev image
+        run: docker compose build web
+
+      - name: Check for missing migrations
+        run: docker compose run --rm web python manage.py makemigrations --check --dry-run
+
+      - name: Run the tests
+        # The cache plugin is off because the container user cannot write to the checkout
+        run: docker compose run --rm web python -m pytest -p no:cacheprovider
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
