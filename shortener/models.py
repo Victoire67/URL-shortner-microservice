@@ -41,3 +41,26 @@ class Url(models.Model):
 
     def __str__(self):
         return f"{self.short_code} -> {self.original_url}"
+
+
+class Click(models.Model):
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["url", "clicked_at"]),
+        ]
+
+    url = models.ForeignKey(
+        Url,
+        on_delete=models.CASCADE,
+        related_name="clicks"
+    )
+    clicked_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField()
+    city = models.CharField(max_length=100, null=True, blank=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
+    user_agent = models.TextField()
+    referrer = models.URLField(max_length=2048, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.url.short_code} @ {self.clicked_at}"
