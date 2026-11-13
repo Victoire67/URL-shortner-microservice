@@ -4,6 +4,7 @@ import string
 from collections.abc import Sequence
 from datetime import datetime
 
+from shortener.domain import Visit
 from shortener.exceptions import ShortCodeGenerationError, ShortCodeNotFound
 from shortener.repositories import UrlRepository
 
@@ -55,9 +56,11 @@ class UrlShortenerService:
 
         raise ShortCodeGenerationError("Could not generate a unique short code.")
 
-    def resolve(self, short_code: str) -> str:
-        """Returns the long url stored under the short code."""
+    def resolve(self, short_code: str, visit: Visit | None = None) -> str:
+        """Returns the long url stored under the short code and logs the visit."""
         long_url = self._repository.get(short_code)
         if long_url is None:
             raise ShortCodeNotFound(f"Short code '{short_code}' was not found.")
+        if visit is not None:
+            self._repository.record_click(short_code, visit)
         return long_url

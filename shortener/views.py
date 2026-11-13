@@ -14,7 +14,8 @@ from rest_framework.views import APIView
 from core.exceptions import error_body
 from core.serializers import ErrorResponseSerializer
 from shortener.containers import Container
-from shortener.models import Url
+from shortener.domain import Visit
+from shortener.models import Click, Url
 from shortener.serializers import URLSerializer
 from shortener.services import UrlShortenerService
 
@@ -153,21 +154,38 @@ class URLViewSet(viewsets.ModelViewSet):
         instance.save(update_fields=["is_active", "updated_at"])
 
 
+REFERRER_MAX_LENGTH = Click._meta.get_field("referrer").max_length
+
+
+def visit_from_request(request) -> Visit:
+    """Reads who is visiting from the HTTP request."""
+    referrer = request.META.get("HTTP_REFERER", "")[:REFERRER_MAX_LENGTH] or None
+    return Visit(
+        ip_address=request.META["REMOTE_ADDR"],
+        user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        referrer=referrer,
+    )
+
+
 class ResolveView(APIView):
-    """Redirects a short code to its long url."""
+    """Redirects a short code to its long url and logs the click."""
 
     @extend_schema(
         tags=[REDIRECT_TAG],
         summary="Resolve a short code",
         operation_id="resolve_short_code",
         description=(
-            "Redirects (302) to the long url stored under the short code. "
-            "Open the short url in a browser to follow the redirect."
+            "Redirects (302) to the long url stored under the short code and saves "
+            "the visit (IP, user agent, referrer) as a click. Missing, expired and "
+            "deactivated codes return 404. Open the short url in a browser to follow "
+            "the redirect."
         ),
         parameters=[SHORT_CODE_PARAMETER],
         responses={
             302: OpenApiResponse(description="Redirect to the long url (see the Location header)."),
-            404: OpenApiResponse(ErrorResponseSerializer, description="The short code does not exist."),
+            404: OpenApiResponse(
+                ErrorResponseSerializer, description="The short code is missing, expired or deactivated."
+            ),
         },
         examples=[
             OpenApiExample(
@@ -185,4 +203,4 @@ class ResolveView(APIView):
         short_code: str,
         service: UrlShortenerService = Provide[Container.url_shortener_service],
     ):
-        return redirect(service.resolve(short_code))
+        return redirect(service.resolve(short_code, visit_from_request(request)))

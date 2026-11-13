@@ -4,9 +4,11 @@ from typing import Protocol
 
 import redis
 from django.db import IntegrityError, transaction
+from django.db.models import F
 
+from shortener.domain import Visit
 from shortener.exceptions import CustomAliasTaken
-from shortener.models import Tag, Url
+from shortener.models import Click, Tag, Url
 
 
 class UrlRepository(Protocol):
@@ -31,6 +33,10 @@ class UrlRepository(Protocol):
         ...
 
     def get(self, short_code: str) -> str | None: ...
+
+    def record_click(self, short_code: str, visit: Visit) -> None:
+        """Saves one visit and adds 1 to the url's click count."""
+        ...
 
 
 class DjangoUrlRepository:
@@ -76,6 +82,24 @@ class DjangoUrlRepository:
             .values_list("original_url", flat=True)
             .first()
         )
+
+    def record_click(self, short_code: str, visit: Visit) -> None:
+        """Saves a Click and increments click_count in one transaction.
+
+        F("click_count") + 1 makes Postgres do the addition itself, so
+        simultaneous visits can never overwrite each other's count.
+        """
+        url_id = Url.objects.filter(short_code=short_code).values_list("pk", flat=True).first()
+        if url_id is None:
+            return
+        with transaction.atomic():
+            Click.objects.create(
+                url_id=url_id,
+                ip_address=visit.ip_address,
+                user_agent=visit.user_agent,
+                referrer=visit.referrer,
+            )
+            Url.objects.filter(pk=url_id).update(click_count=F("click_count") + 1)
 
 
 class RedisUrlRepository:
