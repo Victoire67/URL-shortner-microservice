@@ -1,98 +1,170 @@
 from dependency_injector.wiring import Provide, inject
 from django.shortcuts import redirect
-from django.urls import reverse
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiExample, OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework import status
-from rest_framework.response import Response
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
+from rest_framework import viewsets
 from rest_framework.views import APIView
 
 from core.exceptions import error_body
 from core.serializers import ErrorResponseSerializer
 from shortener.containers import Container
-from shortener.serializers import ShortenRequestSerializer, ShortenResponseSerializer
+from shortener.models import Url
+from shortener.serializers import URLSerializer
 from shortener.services import UrlShortenerService
 
-TAG = "Shortener"
+URLS_TAG = "URLs"
+REDIRECT_TAG = "Redirect"
+
+SHORT_CODE_PARAMETER = OpenApiParameter(
+    "short_code",
+    OpenApiTypes.STR,
+    OpenApiParameter.PATH,
+    description="The code returned when the url was created.",
+    examples=[OpenApiExample("Short code", value="aZ3kP9q")],
+)
+
+URL_REQUEST_EXAMPLE = OpenApiExample(
+    "New url",
+    value={
+        "original_url": "https://docs.djangoproject.com/en/stable/topics/http/urls/",
+        "custom_alias": "django-urls",
+        "title": "Django URL dispatcher",
+        "description": "Docs for routing in Django",
+        "tags": ["Work"],
+        "expires_at": "2027-01-01T00:00:00Z",
+    },
+    request_only=True,
+)
+
+URL_RESPONSE_EXAMPLE = OpenApiExample(
+    "Url",
+    value={
+        "short_code": "aZ3kP9q",
+        "short_url": "http://localhost:8000/api/v1/aZ3kP9q",
+        "original_url": "https://docs.djangoproject.com/en/stable/topics/http/urls/",
+        "custom_alias": "django-urls",
+        "title": "Django URL dispatcher",
+        "description": "Docs for routing in Django",
+        "tags": ["Work"],
+        "is_active": True,
+        "expires_at": "2027-01-01T00:00:00Z",
+        "click_count": 0,
+        "created_at": "2026-11-13T10:00:00Z",
+        "updated_at": "2026-11-13T10:00:00Z",
+    },
+    response_only=True,
+)
+
+INVALID_EXAMPLE = OpenApiExample(
+    "Invalid url",
+    value=error_body(400, "invalid", "Request validation failed.", {"original_url": ["Enter a valid URL."]}),
+    response_only=True,
+    status_codes=["400"],
+)
+
+NOT_FOUND_EXAMPLE = OpenApiExample(
+    "Not found",
+    value=error_body(404, "not_found", "No Url matches the given query."),
+    response_only=True,
+    status_codes=["404"],
+)
+
+INVALID_RESPONSE = OpenApiResponse(ErrorResponseSerializer, description="The body is invalid.")
+NOT_FOUND_RESPONSE = OpenApiResponse(
+    ErrorResponseSerializer, description="No active url has this short code."
+)
 
 
-class ShortenView(APIView):
-    """Takes a long url and returns its short code."""
-
-    @extend_schema(
-        tags=[TAG],
-        summary="Shorten a url",
-        operation_id="shorten_url",
-        description="Stores the long url under a new unique short code.",
-        request=ShortenRequestSerializer,
+@extend_schema_view(
+    list=extend_schema(
+        tags=[URLS_TAG],
+        summary="List urls",
+        description="Returns every active url, newest first.",
+        examples=[URL_RESPONSE_EXAMPLE],
+    ),
+    create=extend_schema(
+        tags=[URLS_TAG],
+        summary="Create a short url",
+        description="Stores original_url under a new unique short code.",
         responses={
-            201: OpenApiResponse(ShortenResponseSerializer, description="Short url created."),
-            400: OpenApiResponse(ErrorResponseSerializer, description="The url is missing or invalid."),
+            201: URLSerializer,
+            400: INVALID_RESPONSE,
             503: OpenApiResponse(ErrorResponseSerializer, description="Storage unavailable or no free code."),
         },
-        examples=[
-            OpenApiExample(
-                "Long url",
-                value={"url": "https://docs.djangoproject.com/en/stable/topics/http/urls/"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                "Created",
-                value={
-                    "short_code": "aZ3kP9q",
-                    "short_url": "http://localhost:8000/api/aZ3kP9q",
-                    "long_url": "https://docs.djangoproject.com/en/stable/topics/http/urls/",
-                },
-                response_only=True,
-                status_codes=["201"],
-            ),
-            OpenApiExample(
-                "Invalid url",
-                value=error_body(400, "invalid", "Request validation failed.", {"url": ["Enter a valid URL."]}),
-                response_only=True,
-                status_codes=["400"],
-            ),
-        ],
-    )
+        examples=[URL_REQUEST_EXAMPLE, URL_RESPONSE_EXAMPLE, INVALID_EXAMPLE],
+    ),
+    retrieve=extend_schema(
+        tags=[URLS_TAG],
+        summary="Get a url",
+        parameters=[SHORT_CODE_PARAMETER],
+        responses={200: URLSerializer, 404: NOT_FOUND_RESPONSE},
+        examples=[URL_RESPONSE_EXAMPLE, NOT_FOUND_EXAMPLE],
+    ),
+    update=extend_schema(
+        tags=[URLS_TAG],
+        summary="Update a url",
+        description="Replaces the editable fields. short_code and click_count never change.",
+        parameters=[SHORT_CODE_PARAMETER],
+        responses={200: URLSerializer, 400: INVALID_RESPONSE, 404: NOT_FOUND_RESPONSE},
+        examples=[URL_REQUEST_EXAMPLE, URL_RESPONSE_EXAMPLE, INVALID_EXAMPLE, NOT_FOUND_EXAMPLE],
+    ),
+    destroy=extend_schema(
+        tags=[URLS_TAG],
+        summary="Deactivate a url",
+        description="Soft delete: sets is_active to false so the short url stops redirecting.",
+        parameters=[SHORT_CODE_PARAMETER],
+        responses={204: None, 404: NOT_FOUND_RESPONSE},
+        examples=[NOT_FOUND_EXAMPLE],
+    ),
+)
+class URLViewSet(viewsets.ModelViewSet):
+    """Create, list, read, update and deactivate short urls."""
+
+    queryset = Url.objects.filter(is_active=True).prefetch_related("tags")
+    serializer_class = URLSerializer
+    lookup_field = "short_code"
+    http_method_names = ["get", "post", "put", "delete", "head", "options"]
+
     @inject
-    def post(
+    def perform_create(
         self,
-        request,
+        serializer,
         service: UrlShortenerService = Provide[Container.url_shortener_service],
     ):
-        serializer = ShortenRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        long_url = serializer.validated_data["url"]
-
-        short_code = service.shorten(long_url)
-        short_url = request.build_absolute_uri(reverse("shortener:resolve", args=[short_code]))
-
-        response = ShortenResponseSerializer(
-            {"short_code": short_code, "short_url": short_url, "long_url": long_url}
+        data = serializer.validated_data
+        short_code = service.shorten(
+            data["original_url"],
+            custom_alias=data.get("custom_alias"),
+            expires_at=data.get("expires_at"),
+            tags=[tag.name for tag in data.get("tags", [])],
+            title=data.get("title", ""),
+            description=data.get("description", ""),
         )
-        return Response(response.data, status=status.HTTP_201_CREATED)
+        serializer.instance = Url.objects.get(short_code=short_code)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=["is_active", "updated_at"])
 
 
 class ResolveView(APIView):
     """Redirects a short code to its long url."""
 
     @extend_schema(
-        tags=[TAG],
+        tags=[REDIRECT_TAG],
         summary="Resolve a short code",
         operation_id="resolve_short_code",
         description=(
             "Redirects (302) to the long url stored under the short code. "
             "Open the short url in a browser to follow the redirect."
         ),
-        parameters=[
-            OpenApiParameter(
-                "short_code",
-                OpenApiTypes.STR,
-                OpenApiParameter.PATH,
-                description="The code returned by the shorten endpoint.",
-                examples=[OpenApiExample("Short code", value="aZ3kP9q")],
-            ),
-        ],
+        parameters=[SHORT_CODE_PARAMETER],
         responses={
             302: OpenApiResponse(description="Redirect to the long url (see the Location header)."),
             404: OpenApiResponse(ErrorResponseSerializer, description="The short code does not exist."),
