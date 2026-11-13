@@ -1,5 +1,5 @@
-import fakeredis
 import pytest
+from django.db import OperationalError
 from django.urls import reverse
 
 SHORTEN_URL = reverse("shortener:shorten")
@@ -61,12 +61,18 @@ def test_wrong_method_returns_405(api_client):
     assert response.json()["error"]["code"] == "method_not_allowed"
 
 
+class UnavailableRepository:
+    def save_if_absent(self, short_code, long_url, **options):
+        raise OperationalError("database is down")
+
+    def get(self, short_code):
+        raise OperationalError("database is down")
+
+
 def test_storage_down_returns_503(api_client, container):
-    server = fakeredis.FakeServer()
-    server.connected = False
     container.reset_singletons()
 
-    with container.redis_client.override(fakeredis.FakeRedis(server=server)):
+    with container.url_repository.override(UnavailableRepository()):
         response = shorten(api_client)
 
     assert response.status_code == 503

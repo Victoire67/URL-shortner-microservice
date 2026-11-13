@@ -12,6 +12,7 @@ bad hosts, crashes).
 
 import logging
 
+from django.db import DatabaseError
 from django.http import JsonResponse
 from redis.exceptions import RedisError
 from rest_framework import status
@@ -49,7 +50,7 @@ def api_exception_handler(exc, context):
         response.data = body
         return response
 
-    if isinstance(exc, RedisError):
+    if isinstance(exc, (DatabaseError, RedisError)):
         logger.error("Storage backend unavailable: %s", exc)
         return Response(
             error_body(503, "storage_unavailable", "The storage backend is unavailable."),

@@ -21,5 +21,6 @@ def container(redis_client):
 
 
 @pytest.fixture
-def api_client(container):
+def api_client(container, db):
+    """API client with the fake Redis and access to the test database."""
     return APIClient()
