@@ -21,6 +21,8 @@ class UrlRepository(Protocol):
         custom_alias: str | None = None,
         expires_at: datetime | None = None,
         tags: Sequence[str] = (),
+        title: str = "",
+        description: str = "",
     ) -> bool:
         """Saves the url; returns False if the short code is taken.
 
@@ -43,6 +45,8 @@ class DjangoUrlRepository:
         custom_alias: str | None = None,
         expires_at: datetime | None = None,
         tags: Sequence[str] = (),
+        title: str = "",
+        description: str = "",
     ) -> bool:
         """Creates the row; the unique constraints decide whether the code or alias is free."""
         try:
@@ -53,6 +57,8 @@ class DjangoUrlRepository:
                     owner=owner,
                     custom_alias=custom_alias,
                     expires_at=expires_at,
+                    title=title,
+                    description=description,
                 )
                 if tags:
                     url.tags.set(Tag.objects.get_or_create(name=name)[0] for name in tags)

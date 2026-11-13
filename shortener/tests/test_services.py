@@ -60,6 +60,8 @@ def test_shorten_passes_url_options_to_the_repository(service, repository):
         custom_alias="docs",
         expires_at=None,
         tags=["Work"],
+        title="Docs",
+        description="Project docs",
     )
 
     assert repository.options[code] == {
@@ -67,6 +69,8 @@ def test_shorten_passes_url_options_to_the_repository(service, repository):
         "custom_alias": "docs",
         "expires_at": None,
         "tags": ["Work"],
+        "title": "Docs",
+        "description": "Project docs",
     }
 
 

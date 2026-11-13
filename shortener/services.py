@@ -32,6 +32,8 @@ class UrlShortenerService:
         custom_alias: str | None = None,
         expires_at: datetime | None = None,
         tags: Sequence[str] = (),
+        title: str = "",
+        description: str = "",
     ) -> str:
         """Stores the url under a new unique short code and returns the code."""
         for _ in range(self.MAX_ATTEMPTS):
@@ -43,6 +45,8 @@ class UrlShortenerService:
                 custom_alias=custom_alias,
                 expires_at=expires_at,
                 tags=tags,
+                title=title,
+                description=description,
             )
             if saved:
                 logger.info("Created short code %s", short_code)
