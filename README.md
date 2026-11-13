@@ -80,11 +80,16 @@ Settings are read from environment variables or the `.env` file (see `.env.examp
 
 ## Tests
 
-The tests use an in-memory fake Redis, so no server is needed.
+The tests need Postgres and use an in-memory fake Redis. The dev image already has the test tools
+(from `requirements-dev.txt`), so run them inside the `web` container:
 
 ```bash
-poetry install
-poetry run pytest
+docker compose up -d
+docker compose exec web python -m pytest
 ```
 
-Without Poetry: `pip install -r requirements.txt pytest pytest-django fakeredis`, then run `pytest`.
+## Inspecting queries
+
+In development, open an API url in the browser (for example http://localhost:8000/api/v1/urls/). The browsable API
+page shows the Django Debug Toolbar; its **SQL** panel lists every query the request ran. The toolbar is only
+installed in the dev image and never ships in the production image.
