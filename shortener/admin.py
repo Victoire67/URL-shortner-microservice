@@ -1,4 +1,4 @@
-from .models import Url
+from .models import Url, Click
 from django.contrib import admin
 
 
@@ -6,3 +6,9 @@ from django.contrib import admin
 class UrlAdmin(admin.ModelAdmin):
     list_display = ("short_code", "original_url", "owner",
                     "is_active", "click_count", "created_at")
+
+
+@admin.register(Click)
+class ClickAdmin(admin.ModelAdmin):
+    list_display = ("url", "clicked_at", "ip_address", "country", "city")
+    list_filter = ("country", "clicked_at")
