@@ -1,0 +1,7 @@
+# Development and test tools, installed only in the dev image (INSTALL_DEV=true)
+-r requirements.txt
+django-debug-toolbar==8.0.0
+sqlparse==0.6.1
+pytest==9.2.0
+pytest-django==4.14.0
+fakeredis==2.40.0

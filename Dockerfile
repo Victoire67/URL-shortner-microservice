@@ -7,8 +7,12 @@ ENV PIP_NO_CACHE_DIR=1 \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt .
+COPY requirements.txt requirements-dev.txt ./
 RUN pip install -r requirements.txt
+
+# The dev image also gets the debug toolbar and test tools (see docker-compose.yml)
+ARG INSTALL_DEV=false
+RUN if [ "$INSTALL_DEV" = "true" ]; then pip install -r requirements-dev.txt; fi
 
 
 # ---- Stage 2: slim runtime image with only the app and its virtualenv ----

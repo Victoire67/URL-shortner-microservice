@@ -12,6 +12,10 @@ services:
   # Development: Django dev server with debug on and hot reloading
   web:
     <<: *app
+    build:
+      context: .
+      args:
+        INSTALL_DEV: "true"
     command: sh -c "python manage.py migrate --noinput && exec python manage.py runserver 0.0.0.0:8000"
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
